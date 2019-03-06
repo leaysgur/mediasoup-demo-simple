@@ -1,4 +1,6 @@
+import Peer from './peer';
 import Sign from './signaling';
+import { generateRandomId } from './utils';
 
 (async function() {
   const localVideo = document.getElementById(
@@ -12,6 +14,7 @@ import Sign from './signaling';
   ) as HTMLButtonElement;
   // const remoteVideos = document.getElementById('js-remote-streams');
   const roomId = document.getElementById('js-room-id') as HTMLInputElement;
+  roomId.value = generateRandomId(8);
 
   const localStream = (await navigator.mediaDevices
     .getUserMedia({ video: true, audio: true })
@@ -25,7 +28,8 @@ import Sign from './signaling';
   joinTrigger.addEventListener('click', () => {
     console.log('join', roomId.value);
 
-    const sign = new Sign('tj7rusgv', 'nbepjtom');
+    const peer = new Peer();
+    const sign = new Sign({ roomId: roomId.value, peerId: peer.id });
     console.log(sign);
 
     leaveTrigger.addEventListener(
