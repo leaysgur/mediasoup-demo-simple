@@ -28,9 +28,11 @@ import { generateRandomId } from './utils';
   joinTrigger.addEventListener('click', () => {
     console.log('join', roomId.value);
 
-    const peer = new Peer();
-    const sign = new Sign({ roomId: roomId.value, peerId: peer.id });
-    console.log(sign);
+    const sign = new Sign();
+    sign.joinRoom(roomId.value);
+
+    const peer = new Peer(sign);
+    console.log(peer);
 
     leaveTrigger.addEventListener(
       'click',

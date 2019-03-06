@@ -1,20 +1,24 @@
 import { WebSocketTransport } from 'protoo-client';
-
-interface SignalingInit {
-  roomId: string;
-  peerId: string;
-}
+import { generateRandomId } from './utils';
 
 export default class Signaling {
-  private ws: WebSocketTransport;
+  private _id: string;
+  private ws: WebSocketTransport | null;
 
-  constructor(options: SignalingInit) {
-    this.ws = new WebSocketTransport(
-      `ws://localhost:4443/?roomId=${options.roomId}&peerId=${options.peerId}`,
-    );
+  constructor() {
+    this._id = generateRandomId(8);
+    this.ws = null;
   }
 
-  async getRouterCapabilities() {
-    this.ws.send({});
+  get id(): string {
+    return this._id;
+  }
+
+  joinRoom(roomId: string) {
+    this.ws = new WebSocketTransport(
+      `ws://localhost:4443/?roomId=${roomId}&peerId=${this._id}`,
+    );
+
+    console.log(this.ws);
   }
 }

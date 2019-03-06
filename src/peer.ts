@@ -1,18 +1,14 @@
 import { Device } from 'mediasoup-client';
-import { generateRandomId } from './utils';
+import Sign from './signaling';
 
 export default class Peer {
-  private _id: string;
-  private _device: Device;
+  private device: Device;
+  private sign: Sign;
 
-  constructor() {
-    this._id = generateRandomId(8);
-    this._device = new Device();
+  constructor(sign: Sign) {
+    this.device = new Device();
+    this.sign = sign;
 
-    console.log(this._device);
-  }
-
-  get id(): string {
-    return this._id;
+    console.log(this.device, this.sign);
   }
 }
