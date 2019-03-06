@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="heading">Room example</h1>
+    <div class="room">
+      <div>
+        <video id="js-local-stream"></video>
+        <input type="text" placeholder="Room Name" id="js-room-id">
+        <button id="js-join-trigger">Join</button>
+        <button id="js-leave-trigger">Leave</button>
+      </div>
+
+      <div class="remote-streams" id="js-remote-streams"></div>
+    </div>
+  </div>
+  <script src="./src/main.ts"></script>
+</body>
+</html>
