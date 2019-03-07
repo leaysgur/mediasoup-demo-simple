@@ -4,7 +4,7 @@ import Room from './room';
   const localVideo = document.getElementById('js-local-stream');
   const joinTrigger = document.getElementById('js-join-trigger');
   const leaveTrigger = document.getElementById('js-leave-trigger');
-  // const remoteVideos = document.getElementById('js-remote-streams');
+  const remoteVideos = document.getElementById('js-remote-streams');
   const roomId = document.getElementById('js-room-id');
 
   const localStream = await navigator.mediaDevices
@@ -13,6 +13,7 @@ import Room from './room';
 
   // Render local stream
   localVideo.muted = true;
+  localVideo.controls = true;
   localVideo.srcObject = localStream;
   await localVideo.play().catch(console.error);
 
@@ -20,8 +21,31 @@ import Room from './room';
     const room = new Room();
     room.join(roomId.value);
 
-    room.once('room:open', () => {
+    room.once('@open', ({ peers }) => {
+      console.log(`${peers.length} peers in this room.`);
       room.sendAudio(localStream.getAudioTracks()[0]);
+      room.sendVideo(localStream.getVideoTracks()[0]);
+    });
+
+    room.on('@consumer', async consumer => {
+      const { appData: { peerId }, track, kind } = consumer;
+      console.log('receive consumer', kind);
+
+      const video = Array.from(remoteVideos.children)
+        .find(el => el.getAttribute('data-peer-id') === peerId);
+
+      if (video) {
+        video.srcObject.addTrack(track, video.srcObject);
+        console.log('update video el');
+      } else {
+        const newVideo = document.createElement('video');
+        newVideo.srcObject = new MediaStream([consumer.track]);
+        newVideo.setAttribute('data-peer-id', peerId);
+        newVideo.controls = true;
+        remoteVideos.append(newVideo);
+        await newVideo.play().catch(console.error);
+        console.log('add new video el');
+      }
     });
 
     leaveTrigger.addEventListener('click', () => room.close(), { once: true });

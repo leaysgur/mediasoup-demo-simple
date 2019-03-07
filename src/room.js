@@ -5,73 +5,91 @@ import { generateRandomId } from './utils';
 
 export default class Room extends EventEmitter {
   constructor() {
+    console.warn('room.constructor()');
     super();
 
     this.id = 'p:' + generateRandomId(6);
     this.peer = null;
     this.sendTransport = null;
     this.recvTransport = null;
-    this.audioProducer = null;
-    this.videoProducer = null;
   }
 
   join(roomId) {
+    console.warn('room.join()');
     const wsTransport = new WebSocketTransport(
       `ws://localhost:4443/?roomId=r:${roomId}&peerId=${this.id}`,
     );
 
     this.peer = new Peer(wsTransport);
     this.peer.on('open', this.onPeerOpen.bind(this));
-    this.peer.on('request', this.onPeerRequest);
-    this.peer.on('notification', this.onPeerNotification);
+    this.peer.on('request', this.onPeerRequest.bind(this));
+    this.peer.on('notification', this.onPeerNotification.bind(this));
     this.peer.on('failed', console.error);
     this.peer.on('disconnected', console.error);
     this.peer.on('close', console.error);
   }
 
   async sendAudio(track) {
-    this.audioProducer = await this.sendTransport.produce({
+    console.warn('room.sendAudio()');
+    const audioProducer = await this.sendTransport.produce({
       track,
     });
+    audioProducer.on('transportclose', console.error);
+    audioProducer.on('trackended', console.error);
+
+    return audioProducer;
+  }
+  async sendVideo(track) {
+    console.warn('room.sendVideo()');
+    const videoProducer = await this.sendTransport.produce({
+      track,
+    });
+    videoProducer.on('transportclose', console.error);
+    videoProducer.on('trackended', console.error);
+
+    return videoProducer;
   }
 
   close() {
-    console.warn('TODO: close');
+    console.warn('room.close()');
   }
 
   async onPeerOpen() {
-    console.warn('open');
+    console.warn('room.peer:open');
     const device = new Device();
 
     const routerRtpCapabilities = await this.peer
       .request('getRouterRtpCapabilities')
       .catch(console.error);
-    device.load({ routerRtpCapabilities });
+    await device.load({ routerRtpCapabilities });
 
     await this._prepareSendTransport(device).catch(console.error);
     await this._prepareRecvTransport(device).catch(console.error);
 
-    const { peers } = await this.peer.request('join', {
+    const res = await this.peer.request('join', {
       device,
       rtpCapabilities: device.rtpCapabilities
     });
-    console.log(peers);
 
-    this.emit('room:open');
+    this.emit('@open', res);
   }
 
   async _prepareSendTransport(device) {
-    const transprotInfo = await this.peer
-      .request('createWebRtcTransport')
+    const transportInfo = await this.peer
+      .request('createWebRtcTransport', {
+        producing: true,
+        consuming: false,
+      })
       .catch(console.error);
 
-    this.sendTransport = device.createSendTransport(transprotInfo);
+    // transportInfo.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+    this.sendTransport = device.createSendTransport(transportInfo);
     this.sendTransport.on('connect', (
       { dtlsParameters },
       callback,
       errback,
     ) => {
-      console.warn('sendTransport:connect');
+      console.warn('room.sendTransport:connect');
       this.peer
         .request('connectWebRtcTransport', {
           transportId: this.sendTransport.id,
@@ -83,7 +101,7 @@ export default class Room extends EventEmitter {
     this.sendTransport.on(
       'produce',
       async ({ kind, rtpParameters, appData }, callback, errback) => {
-        console.warn('sendTransport:produce');
+        console.warn('room.sendTransport:produce');
         try {
           const { id } = await this.peer.request('produce', {
             transportId: this.sendTransport.id,
@@ -98,46 +116,60 @@ export default class Room extends EventEmitter {
         }
       }
     );
-
-    console.log(this.sendTransport);
   }
 
   async _prepareRecvTransport(device) {
-    const transprotInfo = await this.peer
-      .request('createWebRtcTransport')
+    const transportInfo = await this.peer
+      .request('createWebRtcTransport', {
+        producing: false,
+        consuming: true,
+      })
       .catch(console.error);
 
-    this._recvTransport = device.createRecvTransport(transprotInfo);
-    this._recvTransport.on('connect', (
+    // transportInfo.iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+    this.recvTransport = device.createRecvTransport(transportInfo);
+    this.recvTransport.on('connect', (
       { dtlsParameters },
       callback,
       errback,
     ) => {
-      console.warn('recvTransport:connect');
+      console.warn('room.recvTransport:connect');
       this.peer
         .request('connectWebRtcTransport', {
-          transportId: this._recvTransport.id,
+          transportId: this.recvTransport.id,
           dtlsParameters,
         })
         .then(callback)
         .catch(errback);
     });
-    console.log(this._recvTransport);
   }
 
   onPeerRequest(req, resolve) {
-    console.warn('request', req);
-    resolve();
+    console.warn('room.peer:request', req.method);
+    switch (req.method) {
+      case 'newConsumer': {
+        this.recvTransport.consume(req.data).then(consumer => {
+          resolve();
+          this.emit('@consumer', consumer);
+          consumer.on('transportclose', console.error);
+        }).catch(console.error);
+        break;
+      }
+      default:
+        resolve();
+    }
   }
 
   onPeerNotification(notification) {
     switch (notification.method) {
       case 'activeSpeaker':
+      case 'producerScore':
+      case 'consumerScore':
         break;
       case 'newPeer':
       case 'peerClosed':
       default:
-        console.warn('notification', notification);
+        console.warn('room.peer:notification', notification);
     }
   }
 }
