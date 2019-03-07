@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel index.html"
+    "start": "parcel index.html --no-hmr"
   },
   "dependencies": {
     "mediasoup-client": "versatica/mediasoup-client#master",
@@ -16,10 +16,10 @@
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.7.0",
+    "eslint": "^5.15.1",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-prettier": "^3.0.1",
     "parcel-bundler": "^1.11.0",
-    "prettier": "^1.16.4",
-    "tslint": "^5.13.1",
-    "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.3.3333"
+    "prettier": "^1.16.4"
   }
 }
