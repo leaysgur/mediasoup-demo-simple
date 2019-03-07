@@ -13,7 +13,6 @@ import Room from './room';
 
   // Render local stream
   localVideo.muted = true;
-  localVideo.controls = true;
   localVideo.srcObject = localStream;
   await localVideo.play().catch(console.error);
 
@@ -50,7 +49,6 @@ import Room from './room';
         const newVideo = document.createElement('video');
         newVideo.srcObject = new MediaStream([consumer.track]);
         newVideo.setAttribute('data-peer-id', peerId);
-        newVideo.controls = true;
         remoteVideos.append(newVideo);
         await newVideo.play().catch(console.error);
         console.log('add new video el');
