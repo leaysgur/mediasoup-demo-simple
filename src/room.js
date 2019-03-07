@@ -144,7 +144,7 @@ export default class Room extends EventEmitter {
     });
   }
 
-  onPeerRequest(req, resolve) {
+  onPeerRequest(req, resolve, _reject) {
     console.warn('room.peer:request', req.method);
     switch (req.method) {
       case 'newConsumer': {
