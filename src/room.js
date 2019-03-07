@@ -4,13 +4,12 @@ import { generateRandomId } from './utils';
 
 export default class Room {
   constructor() {
-    this.device = null;
     this.peer = null;
     this._id = generateRandomId(8);
     this._sendTransport = null;
   }
 
-  join(roomId: string) {
+  join(roomId) {
     const wsTransport = new WebSocketTransport(
       `ws://localhost:4443/?roomId=${roomId}&peerId=${this._id}`,
     );
@@ -26,23 +25,35 @@ export default class Room {
 
   async onPeerOpen() {
     console.warn('open');
-    this.device = new Device();
+    const device = new Device();
 
     const routerRtpCapabilities = await this.peer
       .request('getRouterRtpCapabilities')
       .catch(console.error);
-    this.device.load({ routerRtpCapabilities });
+    device.load({ routerRtpCapabilities });
 
+    await this._prepareSendTransport(device).catch(console.error);
+    await this._prepareRecvTransport(device).catch(console.error);
+
+    const { peers } = await this.peer.request('join', {
+      device,
+      rtpCapabilities: device.rtpCapabilities
+    });
+    console.log(peers);
+  }
+
+  async _prepareSendTransport(device) {
     const transprotInfo = await this.peer
       .request('createWebRtcTransport')
       .catch(console.error);
 
-    this._sendTransport = this.device.createSendTransport(transprotInfo);
+    this._sendTransport = device.createSendTransport(transprotInfo);
     this._sendTransport.on('connect', (
       { dtlsParameters },
       callback,
       errback,
     ) => {
+      console.warn('sendTransport:connect');
       this.peer
         .request('connectWebRtcTransport', {
           transportId: this._sendTransport.id,
@@ -51,15 +62,57 @@ export default class Room {
         .then(callback)
         .catch(errback);
     });
+    this._sendTransport.on(
+      'produce',
+      async ({ kind, rtpParameters, appData }, callback, errback) => {
+        console.warn('sendTransport:produce');
+        try {
+          const { id } = await this.peer.request('produce', {
+            transportId: this._sendTransport.id,
+            kind,
+            rtpParameters,
+            appData
+          });
+
+          callback({ id });
+        } catch (error) {
+          errback(error);
+        }
+      }
+    );
+
     console.log(this._sendTransport);
   }
 
-  onPeerRequest(req: any, resolve: () => void) {
+  async _prepareRecvTransport(device) {
+    const transprotInfo = await this.peer
+      .request('createWebRtcTransport')
+      .catch(console.error);
+
+    this._recvTransport = device.createRecvTransport(transprotInfo);
+    this._recvTransport.on('connect', (
+      { dtlsParameters },
+      callback,
+      errback,
+    ) => {
+      console.warn('recvTransport:connect');
+      this.peer
+        .request('connectWebRtcTransport', {
+          transportId: this._recvTransport.id,
+          dtlsParameters,
+        })
+        .then(callback)
+        .catch(errback);
+    });
+    console.log(this._recvTransport);
+  }
+
+  onPeerRequest(req, resolve) {
     console.warn('request', req);
     resolve();
   }
 
-  onPeerNotification(notification: any) {
+  onPeerNotification(notification) {
     console.warn('notification', notification);
   }
 }
