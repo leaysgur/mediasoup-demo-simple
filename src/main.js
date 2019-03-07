@@ -23,10 +23,19 @@ import Room from './room';
 
     room.once('@open', ({ peers }) => {
       console.log(`${peers.length} peers in this room.`);
-      room.sendAudio(localStream.getAudioTracks()[0]);
-      room.sendVideo(localStream.getVideoTracks()[0]);
+      room.sendAudio(localStream.getAudioTracks()[0].clone());
+      room.sendVideo(localStream.getVideoTracks()[0].clone());
     });
 
+    room.on('@peerClosed', ({ peerId }) => {
+      console.log(peerId);
+      const video = Array.from(remoteVideos.children)
+        .find(el => el.getAttribute('data-peer-id') === peerId);
+      if (video) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.remove();
+      }
+    });
     room.on('@consumer', async consumer => {
       const { appData: { peerId }, track, kind } = consumer;
       console.log('receive consumer', kind);
@@ -46,6 +55,13 @@ import Room from './room';
         await newVideo.play().catch(console.error);
         console.log('add new video el');
       }
+    });
+    room.once('@close', () => {
+      Array.from(remoteVideos.children).forEach(remoteVideo => {
+        remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+        remoteVideo.srcObject = null;
+        remoteVideo.remove();
+      });
     });
 
     leaveTrigger.addEventListener('click', () => room.close(), { once: true });

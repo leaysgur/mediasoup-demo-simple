@@ -36,8 +36,6 @@ export default class Room extends EventEmitter {
     });
     audioProducer.on('transportclose', console.error);
     audioProducer.on('trackended', console.error);
-
-    return audioProducer;
   }
   async sendVideo(track) {
     console.warn('room.sendVideo()');
@@ -46,12 +44,14 @@ export default class Room extends EventEmitter {
     });
     videoProducer.on('transportclose', console.error);
     videoProducer.on('trackended', console.error);
-
-    return videoProducer;
   }
 
   close() {
     console.warn('room.close()');
+    this.peer.close();
+    this.sendTransport.close();
+    this.recvTransport.close();
+    this.emit('@close');
   }
 
   async onPeerOpen() {
@@ -149,9 +149,9 @@ export default class Room extends EventEmitter {
     switch (req.method) {
       case 'newConsumer': {
         this.recvTransport.consume(req.data).then(consumer => {
-          resolve();
           this.emit('@consumer', consumer);
           consumer.on('transportclose', console.error);
+          resolve();
         }).catch(console.error);
         break;
       }
@@ -165,11 +165,13 @@ export default class Room extends EventEmitter {
       case 'activeSpeaker':
       case 'producerScore':
       case 'consumerScore':
+        // too many logs...
         break;
       case 'newPeer':
       case 'peerClosed':
       default:
         console.warn('room.peer:notification', notification);
+        this.emit('@' + notification.method, notification.data);
     }
   }
 }
