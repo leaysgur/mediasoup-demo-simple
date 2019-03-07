@@ -1,4 +1,4 @@
-# mediasoup-demo-client
+# mediasoup-demo-v3-client
 
 Minimal client implementation for mediasoup-demo server.
 
