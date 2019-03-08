@@ -1,8 +1,8 @@
 # mediasoup-demo-v3-simple
 
-Minimal simple implementation for mediasoup.
+Minimal simple implementation for mediasoup `v3` (not yet released at 2019/03/08).
 
-This example uses mediasoup `v3`(not yet released at 2019/03/08).
+Original source codes come from [versatica/mediasoup-demo#v3](https://github.com/versatica/mediasoup-demo/tree/v3).
 
 ## Setup client
 
