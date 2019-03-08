@@ -18,7 +18,8 @@ import Room from './room';
 
   joinTrigger.addEventListener('click', async () => {
     const room = new Room();
-    room.join(roomId.value);
+    const codec = location.hash === '#h264' ? 'h264' : 'vp8';
+    room.join(roomId.value, codec);
 
     room.once('@open', ({ peers }) => {
       console.log(`${peers.length} peers in this room.`);
