@@ -2,7 +2,7 @@
 
 Minimal simple implementation for mediasoup.
 
-This example uses mediasoup `v3`(not yet released at 2019/03/06)
+This example uses mediasoup `v3`(not yet released at 2019/03/08).
 
 ## Setup client
 
