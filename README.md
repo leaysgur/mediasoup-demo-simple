@@ -1,16 +1,25 @@
-# mediasoup-demo-v3-client
+# mediasoup-demo-v3-simple
 
-Minimal client implementation for mediasoup-demo server.
+Minimal simple implementation for mediasoup.
 
 This example uses mediasoup `v3`(not yet released at 2019/03/06)
 
-## Setup
+## Setup client
 
 ```sh
+cd client
+
 npm i
 npm start
 ```
 
 Open `http://localhost:1234` on browser.
 
-You need to setup `https://github.com/versatica/mediasoup-demo#v3` server by yourself.
+## Setup server
+
+```sh
+cd server
+
+npm i
+npm start
+```
