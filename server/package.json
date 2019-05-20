@@ -9,7 +9,7 @@
   "dependencies": {
     "awaitqueue": "^1.0.0",
     "debug": "^4.1.1",
-    "mediasoup": "versatica/mediasoup#v3",
+    "mediasoup": "^3.0.4",
     "protoo-server": "^4.0.1"
   },
   "devDependencies": {

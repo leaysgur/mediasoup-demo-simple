@@ -25,14 +25,14 @@ module.exports = {
     numWorkers: Object.keys(os.cpus()).length,
     // mediasoup Worker settings.
     worker: {
-      logLevel: 'warn',
+      logLevel: 'debug',
       logTags: [
         'info',
         'ice',
         'dtls',
-        'rtp',
-        'srtp',
-        'rtcp'
+        // 'rtp',
+        // 'srtp',
+        // 'rtcp'
         // 'rtx',
         // 'rbe',
         // 'score'

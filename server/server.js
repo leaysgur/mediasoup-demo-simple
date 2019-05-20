@@ -1,5 +1,5 @@
 const fs = require('fs');
-const https = require('https');
+const http = require('http');
 const url = require('url');
 const protoo = require('protoo-server');
 const mediasoup = require('mediasoup');
@@ -92,13 +92,13 @@ async function runMediasoupWorkers() {
 async function runProtooWebSocketServer() {
   logger.info('running protoo WebSocketServer...');
 
-  // HTTPS server for the protoo WebSocket server.
+  // HTTP server for the protoo WebSocket server.
   const tls = {
     cert: fs.readFileSync(config.protoo.tls.cert),
     key: fs.readFileSync(config.protoo.tls.key)
   };
 
-  const httpsServer = https.createServer(tls, (_req, res) => {
+  const httpsServer = http.createServer(tls, (_req, res) => {
     res.writeHead(404, 'No HTTP here, madda fakka!');
     res.end();
   });
