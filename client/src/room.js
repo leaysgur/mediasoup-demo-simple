@@ -17,7 +17,7 @@ export default class Room extends EventEmitter {
   join(roomId, codec) {
     console.warn('room.join()', roomId, codec);
     const wsTransport = new WebSocketTransport(
-      `wss://localhost:4443/?roomId=r:${roomId}&peerId=${this.id}&forceH264=${codec === 'h264'}`,
+      `ws://localhost:4443/?roomId=r:${roomId}&peerId=${this.id}&forceH264=${codec === 'h264'}`,
     );
 
     this.peer = new Peer(wsTransport);

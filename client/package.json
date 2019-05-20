@@ -7,7 +7,7 @@
     "start": "parcel index.html --no-hmr"
   },
   "dependencies": {
-    "mediasoup-client": "versatica/mediasoup-client#master",
+    "mediasoup-client": "^3.0.0",
     "protoo-client": "^4.0.1"
   },
   "devDependencies": {
