@@ -1,8 +1,11 @@
-# mediasoup-demo-v3-simple
+# mediasoup-demo-simple
 
-Minimal simple implementation for mediasoup `v3` (not yet released at 2019/03/08).
+Minimal simple demo app for mediasoup `v3`.
 
-Original source codes come from [versatica/mediasoup-demo#v3](https://github.com/versatica/mediasoup-demo/tree/v3).
+## Feat
+
+- use only 1 worker, 1 router = 1 room
+- send/recv multiple tracks
 
 ## Setup client
 
@@ -23,3 +26,6 @@ cd server
 npm i
 npm start
 ```
+
+Run websocket server on `http:localost:2345`.
+Also media server runs on `http:localhost:{3000-4000}`.

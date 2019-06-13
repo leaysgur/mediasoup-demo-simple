@@ -1,5 +1,5 @@
 {
-  "name": "mediasoup-demo-v3-simple-server",
+  "name": "mediasoup-demo-simple-server",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -9,13 +9,7 @@
   "dependencies": {
     "awaitqueue": "^1.0.0",
     "debug": "^4.1.1",
-    "mediasoup": "^3.0.4",
-    "protoo-server": "^4.0.1"
-  },
-  "devDependencies": {
-    "eslint": "^5.15.1",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-prettier": "^3.0.1",
-    "prettier": "^1.16.4"
+    "mediasoup": "^3.1.1",
+    "protoo-server": "^4.0.3"
   }
 }
