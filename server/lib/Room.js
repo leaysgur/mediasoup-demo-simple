@@ -7,9 +7,24 @@ class ConfRoom {
   }
 
   getStatus() {
+    const _transports = this._mediasoupRouter._transports;
+
+    const transportDetails = [];
+    for (const t of _transports.values()) {
+      const item = {};
+      if (t.appData.producing) {
+        item.producer = t._producers.size;
+      }
+      if (t.appData.consuming) {
+        item.consumer = t._consumers.size;
+      }
+      transportDetails.push(item);
+    }
+
     return {
-      peerLen: this._protooRoom.peers.length,
-      transportLen: this._mediasoupRouter._transports.size
+      peer: this._protooRoom.peers.length,
+      transport: _transports.size,
+      transports: transportDetails
     };
   }
 

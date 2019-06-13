@@ -55,5 +55,5 @@ const ConfRoom = require("./lib/Room");
   });
 
   console.log("websocket server started on http://127.0.0.1:2345");
-  setInterval(() => console.log("room stat", room.getStatus()), 1000 * 10);
+  setInterval(() => console.log("room stat", room.getStatus()), 1000 * 5);
 })();
