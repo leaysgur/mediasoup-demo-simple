@@ -72,7 +72,9 @@ class ConfRoom extends EventEmitter {
       // If the Peer was joined, notify all Peers.
       if (peer.data.joined) {
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
-          otherPeer.notify("peerClosed", { peerId: peer.id }).catch(() => {});
+          otherPeer
+            .notify("peerClosed", { peerId: peer.id })
+            .catch(console.error);
         }
       }
 
@@ -99,23 +101,19 @@ class ConfRoom extends EventEmitter {
       case "join": {
         if (peer.data.joined) throw new Error("Peer already joined");
 
-        const { device, rtpCapabilities } = request.data;
+        const { rtpCapabilities } = request.data;
 
         if (typeof rtpCapabilities !== "object")
           throw new TypeError("missing rtpCapabilities");
 
         // Store client data into the protoo Peer data object.
-        peer.data.device = device;
         peer.data.rtpCapabilities = rtpCapabilities;
 
         // Tell the new Peer about already joined Peers.
         // And also create Consumers for existing Producers.
         const peers = [];
         for (const otherPeer of this._getJoinedPeers()) {
-          peers.push({
-            id: otherPeer.id,
-            device: otherPeer.data.device
-          });
+          peers.push({ id: otherPeer.id });
 
           for (const producer of otherPeer.data.producers.values()) {
             this._createConsumer({
@@ -133,12 +131,7 @@ class ConfRoom extends EventEmitter {
 
         // Notify the new Peer to all other Peers.
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
-          otherPeer
-            .notify("newPeer", {
-              id: peer.id,
-              device: peer.data.device
-            })
-            .catch(() => {});
+          otherPeer.notify("newPeer", { id: peer.id }).catch(console.error);
         }
 
         break;
@@ -188,6 +181,13 @@ class ConfRoom extends EventEmitter {
         if (!transport)
           throw new Error(`transport with id "${transportId}" not found`);
 
+        if (!transport.appData.producing) {
+          console.error(
+            "_createConsumer() | WebRtcTransport for consuming not found"
+          );
+          return;
+        }
+
         // Add peerId into appData to later get the associated Peer.
         appData = Object.assign({ peerId: peer.id }, appData);
 
@@ -215,7 +215,6 @@ class ConfRoom extends EventEmitter {
       }
 
       case "closeProducer": {
-        // Ensure the Peer is joined.
         if (!peer.data.joined) throw new Error("Peer not yet joined");
 
         const { producerId } = request.data;
@@ -239,28 +238,20 @@ class ConfRoom extends EventEmitter {
     }
   }
 
-  _getJoinedPeers({ excludePeer = undefined } = {}) {
+  _getJoinedPeers({ excludePeer } = { excludePeer: null }) {
     return this._protooRoom.peers.filter(
       peer => peer.data.joined && peer !== excludePeer
     );
   }
 
   async _createConsumer({ consumerPeer, producerPeer, producer }) {
-    // Optimization:
-    // - Create the server-side Consumer. If video, do it paused.
-    // - Tell its Peer about it and wait for its response.
-    // - Upon receipt of the response, resume the server-side Consumer.
-    // - If video, this will mean a single key frame requested by the
-    //   server-side Consumer (when resuming it).
-
-    // NOTE: Don't create the Consumer if the remote Peer cannot consume it.
     if (
       !this._mediasoupRouter.canConsume({
         producerId: producer.id,
         rtpCapabilities: consumerPeer.data.rtpCapabilities
       })
     ) {
-      console.log("_createConsumer() | can not consume!");
+      console.error("_createConsumer() | can not consume!");
       return;
     }
 
@@ -269,10 +260,9 @@ class ConfRoom extends EventEmitter {
     );
 
     if (!transport) {
-      console.log(
+      console.error(
         "_createConsumer() | WebRtcTransport for consuming not found"
       );
-
       return;
     }
 
@@ -285,7 +275,7 @@ class ConfRoom extends EventEmitter {
         paused: producer.kind === "video"
       });
     } catch (error) {
-      console.log("_createConsumer() | transport.consume():%o", error);
+      console.error("_createConsumer() | transport.consume():%o", error);
       return;
     }
 
@@ -302,7 +292,7 @@ class ConfRoom extends EventEmitter {
       consumerPeer.data.consumers.delete(consumer.id);
       consumerPeer
         .notify("consumerClosed", { consumerId: consumer.id })
-        .catch(() => {});
+        .catch(console.error);
     });
 
     // Send a protoo request to the remote Peer with Consumer parameters.
@@ -321,7 +311,7 @@ class ConfRoom extends EventEmitter {
       // Resume it when accepted
       if (producer.kind === "video") await consumer.resume();
     } catch (error) {
-      console.log("_createConsumer() | failed:%o", error);
+      console.error("_createConsumer() | failed:%o", error);
     }
   }
 }

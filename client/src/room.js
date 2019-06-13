@@ -69,7 +69,6 @@ export default class Room extends EventEmitter {
     await this._prepareRecvTransport(device).catch(console.error);
 
     const res = await this.peer.request("join", {
-      device,
       rtpCapabilities: device.rtpCapabilities
     });
 
