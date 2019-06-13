@@ -251,6 +251,16 @@ class ConfRoom {
       return;
     }
 
+    const { accept } = await consumerPeer.request("newConsumerOffer", {
+      peerId: producerPeer.id,
+      kind: producer.kind
+    });
+
+    if (!accept) {
+      console.log("consume canceled");
+      return;
+    }
+
     let consumer;
     try {
       consumer = await transport.consume({
@@ -281,8 +291,8 @@ class ConfRoom {
     });
 
     // Send a protoo request to the remote Peer with Consumer parameters.
-    try {
-      await consumerPeer.request("newConsumer", {
+    await consumerPeer
+      .request("newConsumer", {
         peerId: producerPeer.id,
         producerId: producer.id,
         id: consumer.id,
@@ -291,13 +301,14 @@ class ConfRoom {
         type: consumer.type,
         appData: producer.appData,
         producerPaused: consumer.producerPaused
+      })
+      .then(() => {
+        // Resume it when accepted
+        if (producer.kind === "video") consumer.resume();
+      })
+      .catch(error => {
+        console.error("_createConsumer() | failed:%o", error);
       });
-
-      // Resume it when accepted
-      if (producer.kind === "video") await consumer.resume();
-    } catch (error) {
-      console.error("_createConsumer() | failed:%o", error);
-    }
   }
 }
 

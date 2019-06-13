@@ -14,12 +14,10 @@ export default class Room extends EventEmitter {
     this.recvTransport = null;
   }
 
-  join(roomId, codec) {
-    console.warn("room.join()", roomId, codec);
+  join() {
+    console.warn("room.join()");
     const wsTransport = new WebSocketTransport(
-      `ws://localhost:2345/?roomId=r:${roomId}&peerId=${
-        this.id
-      }&forceH264=${codec === "h264"}`
+      `ws://localhost:2345/?peerId=${this.id}`
     );
 
     this.peer = new Peer(wsTransport);
@@ -143,9 +141,20 @@ export default class Room extends EventEmitter {
     );
   }
 
-  onPeerRequest(req, resolve, _reject) {
+  onPeerRequest(req, resolve, reject) {
     console.warn("room.peer:request", req.method);
     switch (req.method) {
+      // if you decline this offer, will not request `newConsumer`
+      case "newConsumerOffer": {
+        if (
+          confirm(`Do you consume ${req.data.kind} from ${req.data.peerId}?`)
+        ) {
+          resolve({ accept: true });
+          return;
+        }
+        resolve({ accept: false });
+        break;
+      }
       case "newConsumer": {
         this.recvTransport
           .consume(req.data)
@@ -154,7 +163,7 @@ export default class Room extends EventEmitter {
             consumer.on("transportclose", console.error);
             resolve();
           })
-          .catch(console.error);
+          .catch(reject);
         break;
       }
       default:

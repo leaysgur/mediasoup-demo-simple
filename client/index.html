@@ -1,27 +1,22 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title></title>
+  <title>mediasoup demo</title>
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
   <div class="container">
-    <h1 class="heading">Room example</h1>
-    <p class="note">
-      Change preferred codecs (before join in a room):
-      <a href="#">vp8</a> / <a href="#h264">h264</a>
-    </p>
-    <div class="room">
-      <div>
-        <video id="js-local-stream"></video>
-        <input type="text" placeholder="Room Name" id="js-room-id">
-        <button id="js-join-trigger">Join</button>
-        <button id="js-leave-trigger">Leave</button>
-      </div>
+    <h1 class="heading">mediasoup demo</h1>
 
-      <div class="remote-streams" id="js-remote-streams"></div>
+    <div class="tools">
+      <button id="js-join-trigger">Join</button>
+      <button id="js-send-audio">Send:audio</button>
+      <button id="js-send-video">Send:video</button>
+      <button id="js-send-display">Send:display</button>
     </div>
+
+    <div class="remote-streams" id="js-remote-streams"></div>
   </div>
   <script src="./src/main.js"></script>
 </body>

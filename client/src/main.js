@@ -1,68 +1,70 @@
-import Room from './room';
+import Room from "./room";
 
 (async function() {
-  const localVideo = document.getElementById('js-local-stream');
-  const joinTrigger = document.getElementById('js-join-trigger');
-  const leaveTrigger = document.getElementById('js-leave-trigger');
-  const remoteVideos = document.getElementById('js-remote-streams');
-  const roomId = document.getElementById('js-room-id');
+  const joinTrigger = document.getElementById("js-join-trigger");
+  const sendAudioTrigger = document.getElementById("js-send-audio");
+  const sendVideoTrigger = document.getElementById("js-send-video");
+  const sendDisplayTrigger = document.getElementById("js-send-display");
 
-  const localStream = await navigator.mediaDevices
-    .getUserMedia({ video: true, audio: true })
-    .catch(console.error);
+  const remoteVideos = document.getElementById("js-remote-streams");
 
-  // Render local stream
-  localVideo.muted = true;
-  localVideo.srcObject = localStream;
-  await localVideo.play().catch(console.error);
-
-  joinTrigger.addEventListener('click', async () => {
+  joinTrigger.addEventListener("click", async () => {
     const room = new Room();
-    const codec = location.hash === '#h264' ? 'h264' : 'vp8';
-    room.join(roomId.value, codec);
+    room.join();
 
-    room.once('@open', ({ peers }) => {
+    room.once("@open", ({ peers }) => {
       console.log(`${peers.length} peers in this room.`);
-      room.sendAudio(localStream.getAudioTracks()[0].clone());
-      room.sendVideo(localStream.getVideoTracks()[0].clone());
+
+      sendAudioTrigger.addEventListener("click", async () => {
+        const localStream = await navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .catch(console.error);
+        room.sendAudio(localStream.getAudioTracks()[0].clone());
+      });
+      sendVideoTrigger.addEventListener("click", async () => {
+        const localStream = await navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .catch(console.error);
+        room.sendVideo(localStream.getVideoTracks()[0].clone());
+      });
+      sendDisplayTrigger.addEventListener("click", async () => {
+        const localStream = await navigator.mediaDevices
+          .getDisplayMedia({ video: true })
+          .catch(console.error);
+        room.sendVideo(localStream.getVideoTracks()[0].clone());
+      });
     });
 
-    room.on('@peerClosed', ({ peerId }) => {
-      console.log(peerId);
-      const video = Array.from(remoteVideos.children)
-        .find(el => el.getAttribute('data-peer-id') === peerId);
-      if (video) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.remove();
+    room.on("@peerClosed", ({ peerId }) => {
+      const el = Array.from(remoteVideos.children).find(
+        el => el.getAttribute("data-peer-id") === peerId
+      );
+      if (el) {
+        el.srcObject.getTracks().forEach(track => track.stop());
+        el.remove();
       }
     });
-    room.on('@consumer', async consumer => {
-      const { appData: { peerId }, track, kind } = consumer;
-      console.log('receive consumer', kind);
+    room.on("@consumer", async consumer => {
+      const {
+        appData: { peerId },
+        track,
+        kind
+      } = consumer;
+      console.log("receive consumer", kind);
 
-      const video = Array.from(remoteVideos.children)
-        .find(el => el.getAttribute('data-peer-id') === peerId);
-
-      if (video) {
-        video.srcObject.addTrack(track, video.srcObject);
-        console.log('update video el');
-      } else {
-        const newVideo = document.createElement('video');
-        newVideo.srcObject = new MediaStream([consumer.track]);
-        newVideo.setAttribute('data-peer-id', peerId);
-        remoteVideos.append(newVideo);
-        await newVideo.play().catch(console.error);
-        console.log('add new video el');
-      }
+      const el = document.createElement(kind);
+      el.srcObject = new MediaStream([track]);
+      el.setAttribute("data-peer-id", peerId);
+      el.playsInline = true;
+      remoteVideos.append(el);
+      await el.play().catch(console.error);
     });
-    room.once('@close', () => {
+    room.once("@close", () => {
       Array.from(remoteVideos.children).forEach(remoteVideo => {
         remoteVideo.srcObject.getTracks().forEach(track => track.stop());
         remoteVideo.srcObject = null;
         remoteVideo.remove();
       });
     });
-
-    leaveTrigger.addEventListener('click', () => room.close(), { once: true });
   });
 })();
