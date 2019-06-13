@@ -1,4 +1,4 @@
-import Room from "./room";
+import Room from "./lib/room";
 
 (async function() {
   const joinTrigger = document.getElementById("js-join-trigger");
