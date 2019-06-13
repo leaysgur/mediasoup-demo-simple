@@ -49,33 +49,42 @@ import Room from "./lib/room";
     });
 
     room.on("@peerClosed", ({ peerId }) => {
-      Array.from(remoteTracks.children)
-        .filiter(el => el.getAttribute("data-peer-id") === peerId)
-        .forEach(el => {
-          el.srcObject.getTracks().forEach(track => track.stop());
-          el.remove();
-        });
+      removeMediaEl(remoteTracks, "data-peer-id", peerId);
     });
 
     room.on("@consumer", async consumer => {
       const {
+        id,
         appData: { peerId },
-        track,
-        kind
+        track
       } = consumer;
-      console.log("receive consumer", kind);
+      console.log("receive consumer", consumer);
 
-      const el = createMediaEl(track, peerId);
+      const el = createMediaEl(track, peerId, id);
       remoteTracks.append(el);
+    });
+
+    room.on("@consumerClosed", ({ consumerId }) => {
+      removeMediaEl(remoteTracks, "data-consumer-id", consumerId);
     });
   });
 })();
 
-function createMediaEl(track, peerId) {
+function createMediaEl(track, peerId, consumerId) {
   const el = document.createElement(track.kind);
   el.srcObject = new MediaStream([track]);
   el.setAttribute("data-peer-id", peerId);
+  el.setAttribute("data-consumer-id", consumerId);
   el.playsInline = true;
   el.play().catch(console.error);
   return el;
+}
+
+function removeMediaEl($container, key, id) {
+  Array.from($container.children)
+    .filter(el => el.getAttribute(key) === id)
+    .forEach(el => {
+      el.srcObject.getTracks().forEach(track => track.stop());
+      el.remove();
+    });
 }

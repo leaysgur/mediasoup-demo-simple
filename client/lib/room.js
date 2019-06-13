@@ -159,7 +159,6 @@ export default class Room extends EventEmitter {
           .consume(req.data)
           .then(consumer => {
             this.emit("@consumer", consumer);
-            consumer.on("transportclose", console.error);
             resolve();
           })
           .catch(reject);
