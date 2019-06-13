@@ -1,22 +1,9 @@
-const { EventEmitter } = require("events");
+const { Room } = require("protoo-server");
 
-class ConfRoom extends EventEmitter {
-  constructor({ protooRoom, mediasoupRouter }) {
-    super();
-    this.setMaxListeners(Infinity);
-
-    this._closed = false;
-    this._protooRoom = protooRoom;
+class ConfRoom {
+  constructor(mediasoupRouter) {
+    this._protooRoom = new Room();
     this._mediasoupRouter = mediasoupRouter;
-  }
-
-  close() {
-    console.log("close()");
-
-    this._closed = true;
-    this._protooRoom.close();
-    this._mediasoupRouter.close();
-    this.emit("close");
   }
 
   getStatus() {
@@ -66,7 +53,6 @@ class ConfRoom extends EventEmitter {
     });
 
     peer.on("close", () => {
-      if (this._closed) return;
       console.log('protoo Peer "close" event [peerId:%s]', peer.id);
 
       // If the Peer was joined, notify all Peers.
@@ -85,8 +71,7 @@ class ConfRoom extends EventEmitter {
       }
 
       if (this._protooRoom.peers.length === 0) {
-        console.log("last Peer in the room left, closing the room");
-        this.close();
+        console.log("last Peer in the room left");
       }
     });
   }

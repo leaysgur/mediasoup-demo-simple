@@ -1,6 +1,6 @@
 const http = require("http");
 const url = require("url");
-const { WebSocketServer, Room } = require("protoo-server");
+const { WebSocketServer } = require("protoo-server");
 const mediasoup = require("mediasoup");
 const ConfRoom = require("./lib/Room");
 
@@ -33,10 +33,7 @@ const ConfRoom = require("./lib/Room");
     ]
   });
 
-  const room = new ConfRoom({
-    protooRoom: new Room(),
-    mediasoupRouter: router
-  });
+  const room = new ConfRoom(router);
 
   const httpServer = http.createServer();
   await new Promise(resolve => {
