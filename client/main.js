@@ -24,6 +24,7 @@ import Room from "./lib/room";
         await room.sendAudio(track);
         localTracks.append(createMediaEl(track, ""));
       });
+
       sendVideoTrigger.addEventListener("click", async () => {
         const track = await navigator.mediaDevices
           .getUserMedia({ video: true })
@@ -32,6 +33,7 @@ import Room from "./lib/room";
         await room.sendVideo(track);
         localTracks.append(createMediaEl(track, ""));
       });
+
       sendDisplayTrigger.addEventListener("click", async () => {
         const track = await navigator.mediaDevices
           .getDisplayMedia({ video: true })
@@ -45,6 +47,7 @@ import Room from "./lib/room";
     room.on("@peerJoined", ({ peerId }) => {
       console.log("new peer joined", peerId);
     });
+
     room.on("@peerClosed", ({ peerId }) => {
       Array.from(remoteTracks.children)
         .filiter(el => el.getAttribute("data-peer-id") === peerId)
@@ -53,6 +56,7 @@ import Room from "./lib/room";
           el.remove();
         });
     });
+
     room.on("@consumer", async consumer => {
       const {
         appData: { peerId },
