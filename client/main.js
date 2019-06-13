@@ -21,8 +21,9 @@ import Room from "./lib/room";
           .getUserMedia({ audio: true })
           .then(stream => stream.getAudioTracks()[0])
           .catch(console.error);
-        await room.sendAudio(track);
-        localTracks.append(createMediaEl(track, ""));
+
+        const producer = await room.sendAudio(track);
+        localTracks.append(createMediaEl(track, "", producer.id));
       });
 
       sendVideoTrigger.addEventListener("click", async () => {
@@ -30,8 +31,9 @@ import Room from "./lib/room";
           .getUserMedia({ video: true })
           .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
-        await room.sendVideo(track);
-        localTracks.append(createMediaEl(track, ""));
+
+        const producer = await room.sendVideo(track);
+        localTracks.append(createMediaEl(track, "", producer.id));
       });
 
       sendDisplayTrigger.addEventListener("click", async () => {
@@ -39,8 +41,9 @@ import Room from "./lib/room";
           .getDisplayMedia({ video: true })
           .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
-        await room.sendVideo(track);
-        localTracks.append(createMediaEl(track, ""));
+
+        const producer = await room.sendVideo(track);
+        localTracks.append(createMediaEl(track, "", producer.id));
       });
     });
 
@@ -65,16 +68,20 @@ import Room from "./lib/room";
     });
 
     room.on("@consumerClosed", ({ consumerId }) => {
-      removeMediaEl(remoteTracks, "data-consumer-id", consumerId);
+      removeMediaEl(remoteTracks, "data-search-id", consumerId);
+    });
+
+    room.on("@producerClosed", ({ producerId }) => {
+      removeMediaEl(localTracks, "data-search-id", producerId);
     });
   });
 })();
 
-function createMediaEl(track, peerId, consumerId) {
+function createMediaEl(track, peerId, searchId) {
   const el = document.createElement(track.kind);
   el.srcObject = new MediaStream([track]);
   el.setAttribute("data-peer-id", peerId);
-  el.setAttribute("data-consumer-id", consumerId);
+  el.setAttribute("data-search-id", searchId);
   el.playsInline = true;
   el.play().catch(console.error);
   return el;

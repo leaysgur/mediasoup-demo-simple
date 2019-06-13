@@ -33,6 +33,7 @@ export default class Room extends EventEmitter {
       console.warn("producer.close() by trackended");
       await this._closeProducer(audioProducer);
     });
+    return audioProducer;
   }
 
   async sendVideo(track) {
@@ -44,6 +45,7 @@ export default class Room extends EventEmitter {
       console.warn("producer.close() by trackended");
       await this._closeProducer(videoProducer);
     });
+    return videoProducer;
   }
 
   async onPeerOpen() {
@@ -138,6 +140,7 @@ export default class Room extends EventEmitter {
     await this.peer
       .request("closeProducer", { producerId: producer.id })
       .catch(console.error);
+    this.emit("@producerClosed", { producerId: producer.id });
   }
 
   onPeerRequest(req, resolve, reject) {
