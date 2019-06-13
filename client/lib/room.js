@@ -29,16 +29,21 @@ export default class Room extends EventEmitter {
     const audioProducer = await this.sendTransport.produce({
       track
     });
-    audioProducer.on("transportclose", console.error);
-    audioProducer.on("trackended", console.error);
+    audioProducer.on("trackended", async () => {
+      console.warn("producer.close() by trackended");
+      await this._closeProducer(audioProducer);
+    });
   }
+
   async sendVideo(track) {
     console.warn("room.sendVideo()");
     const videoProducer = await this.sendTransport.produce({
       track
     });
-    videoProducer.on("transportclose", console.error);
-    videoProducer.on("trackended", console.error);
+    videoProducer.on("trackended", async () => {
+      console.warn("producer.close() by trackended");
+      await this._closeProducer(videoProducer);
+    });
   }
 
   async onPeerOpen() {
@@ -126,6 +131,13 @@ export default class Room extends EventEmitter {
           .catch(errback);
       }
     );
+  }
+
+  async _closeProducer(producer) {
+    producer.close();
+    await this.peer
+      .request("closeProducer", { producerId: producer.id })
+      .catch(console.error);
   }
 
   onPeerRequest(req, resolve, reject) {

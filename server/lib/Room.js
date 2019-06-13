@@ -83,6 +83,7 @@ class ConfRoom {
   }
 
   async _handleProtooRequest(peer, request, accept, reject) {
+    console.log(`request:${request.method}`);
     switch (request.method) {
       case "getRouterRtpCapabilities": {
         accept(this._mediasoupRouter.rtpCapabilities);
