@@ -6,7 +6,8 @@ import Room from "./room";
   const sendVideoTrigger = document.getElementById("js-send-video");
   const sendDisplayTrigger = document.getElementById("js-send-display");
 
-  const remoteVideos = document.getElementById("js-remote-streams");
+  const localTracks = document.getElementById("js-local-tracks");
+  const remoteTracks = document.getElementById("js-remote-tracks");
 
   joinTrigger.addEventListener("click", async () => {
     const room = new Room();
@@ -16,27 +17,34 @@ import Room from "./room";
       console.log(`${peers.length} peers in this room.`);
 
       sendAudioTrigger.addEventListener("click", async () => {
-        const localStream = await navigator.mediaDevices
+        const track = await navigator.mediaDevices
           .getUserMedia({ audio: true })
+          .then(stream => stream.getAudioTracks()[0])
           .catch(console.error);
-        room.sendAudio(localStream.getAudioTracks()[0].clone());
+
+        localTracks.append(createMediaEl(track, ""));
+        room.sendAudio(track);
       });
       sendVideoTrigger.addEventListener("click", async () => {
-        const localStream = await navigator.mediaDevices
+        const track = await navigator.mediaDevices
           .getUserMedia({ video: true })
+          .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
-        room.sendVideo(localStream.getVideoTracks()[0].clone());
+        localTracks.append(createMediaEl(track, ""));
+        room.sendVideo(track);
       });
       sendDisplayTrigger.addEventListener("click", async () => {
-        const localStream = await navigator.mediaDevices
+        const track = await navigator.mediaDevices
           .getDisplayMedia({ video: true })
+          .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
-        room.sendVideo(localStream.getVideoTracks()[0].clone());
+        localTracks.append(createMediaEl(track, ""));
+        room.sendVideo(track);
       });
     });
 
     room.on("@peerClosed", ({ peerId }) => {
-      const el = Array.from(remoteVideos.children).find(
+      const el = Array.from(remoteTracks.children).find(
         el => el.getAttribute("data-peer-id") === peerId
       );
       if (el) {
@@ -52,15 +60,11 @@ import Room from "./room";
       } = consumer;
       console.log("receive consumer", kind);
 
-      const el = document.createElement(kind);
-      el.srcObject = new MediaStream([track]);
-      el.setAttribute("data-peer-id", peerId);
-      el.playsInline = true;
-      remoteVideos.append(el);
-      await el.play().catch(console.error);
+      const el = createMediaEl(track, peerId);
+      remoteTracks.append(el);
     });
     room.once("@close", () => {
-      Array.from(remoteVideos.children).forEach(remoteVideo => {
+      Array.from(remoteTracks.children).forEach(remoteVideo => {
         remoteVideo.srcObject.getTracks().forEach(track => track.stop());
         remoteVideo.srcObject = null;
         remoteVideo.remove();
@@ -68,3 +72,12 @@ import Room from "./room";
     });
   });
 })();
+
+function createMediaEl(track, peerId) {
+  const el = document.createElement(track.kind);
+  el.srcObject = new MediaStream([track]);
+  el.setAttribute("data-peer-id", peerId);
+  el.playsInline = true;
+  el.play().catch(console.error);
+  return el;
+}
