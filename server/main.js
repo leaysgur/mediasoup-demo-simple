@@ -5,8 +5,6 @@ const mediasoup = require("mediasoup");
 const ConfRoom = require("./lib/Room");
 
 (async () => {
-  console.log("start server");
-
   const worker = await mediasoup.createWorker({
     rtcMinPort: 3000,
     rtcMaxPort: 4000
@@ -39,7 +37,6 @@ const ConfRoom = require("./lib/Room");
     protooRoom: new Room(),
     mediasoupRouter: router
   });
-  setInterval(() => console.log("room stat", room.getStatus()), 1000 * 10);
 
   const httpServer = http.createServer();
   await new Promise(resolve => {
@@ -49,6 +46,7 @@ const ConfRoom = require("./lib/Room");
   const wsServer = new WebSocketServer(httpServer);
   wsServer.on("connectionrequest", (info, accept, reject) => {
     const u = url.parse(info.request.url, true);
+    // TODO: generate this from server?
     const peerId = u.query["peerId"];
 
     if (!peerId) {
@@ -64,8 +62,9 @@ const ConfRoom = require("./lib/Room");
     );
 
     const protooWebSocketTransport = accept();
-    room.handleProtooConnection({ peerId, protooWebSocketTransport });
+    room.handlePeerConnect({ peerId, protooWebSocketTransport });
   });
 
   console.log("websocket server started on http://127.0.0.1:2345");
+  setInterval(() => console.log("room stat", room.getStatus()), 1000 * 10);
 })();

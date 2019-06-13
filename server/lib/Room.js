@@ -26,7 +26,7 @@ class ConfRoom extends EventEmitter {
     };
   }
 
-  handleProtooConnection({ peerId, protooWebSocketTransport }) {
+  handlePeerConnect({ peerId, protooWebSocketTransport }) {
     const existingPeer = this._protooRoom.getPeer(peerId);
 
     if (existingPeer) {
@@ -269,7 +269,9 @@ class ConfRoom extends EventEmitter {
     );
 
     if (!transport) {
-      console.log("_createConsumer() | WebRtcTransport for consuming not found");
+      console.log(
+        "_createConsumer() | WebRtcTransport for consuming not found"
+      );
 
       return;
     }
