@@ -10,7 +10,7 @@ import Room from "./room";
   const remoteTracks = document.getElementById("js-remote-tracks");
 
   joinTrigger.addEventListener("click", async () => {
-    const room = new Room();
+    const room = (window.room = new Room());
     room.join();
 
     room.once("@open", ({ peers }) => {
@@ -21,36 +21,37 @@ import Room from "./room";
           .getUserMedia({ audio: true })
           .then(stream => stream.getAudioTracks()[0])
           .catch(console.error);
-
+        await room.sendAudio(track);
         localTracks.append(createMediaEl(track, ""));
-        room.sendAudio(track);
       });
       sendVideoTrigger.addEventListener("click", async () => {
         const track = await navigator.mediaDevices
           .getUserMedia({ video: true })
           .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
+        await room.sendVideo(track);
         localTracks.append(createMediaEl(track, ""));
-        room.sendVideo(track);
       });
       sendDisplayTrigger.addEventListener("click", async () => {
         const track = await navigator.mediaDevices
           .getDisplayMedia({ video: true })
           .then(stream => stream.getVideoTracks()[0])
           .catch(console.error);
+        await room.sendVideo(track);
         localTracks.append(createMediaEl(track, ""));
-        room.sendVideo(track);
       });
     });
 
+    room.on("@peerJoined", ({ peerId }) => {
+      console.log("new peer joined", peerId);
+    });
     room.on("@peerClosed", ({ peerId }) => {
-      const el = Array.from(remoteTracks.children).find(
-        el => el.getAttribute("data-peer-id") === peerId
-      );
-      if (el) {
-        el.srcObject.getTracks().forEach(track => track.stop());
-        el.remove();
-      }
+      Array.from(remoteTracks.children)
+        .filiter(el => el.getAttribute("data-peer-id") === peerId)
+        .forEach(el => {
+          el.srcObject.getTracks().forEach(track => track.stop());
+          el.remove();
+        });
     });
     room.on("@consumer", async consumer => {
       const {
@@ -62,13 +63,6 @@ import Room from "./room";
 
       const el = createMediaEl(track, peerId);
       remoteTracks.append(el);
-    });
-    room.once("@close", () => {
-      Array.from(remoteTracks.children).forEach(remoteVideo => {
-        remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-        remoteVideo.srcObject = null;
-        remoteVideo.remove();
-      });
     });
   });
 })();

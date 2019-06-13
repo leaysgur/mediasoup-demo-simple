@@ -4,7 +4,6 @@ import { WebSocketTransport, Peer } from "protoo-client";
 
 export default class Room extends EventEmitter {
   constructor() {
-    console.warn("room.constructor()");
     super();
 
     this.peer = null;
@@ -40,14 +39,6 @@ export default class Room extends EventEmitter {
     });
     videoProducer.on("transportclose", console.error);
     videoProducer.on("trackended", console.error);
-  }
-
-  close() {
-    console.warn("room.close()");
-    this.peer.close();
-    this.sendTransport.close();
-    this.recvTransport.close();
-    this.emit("@close");
   }
 
   async onPeerOpen() {
@@ -168,17 +159,7 @@ export default class Room extends EventEmitter {
   }
 
   onPeerNotification(notification) {
-    switch (notification.method) {
-      case "activeSpeaker":
-      case "producerScore":
-      case "consumerScore":
-        // too many logs...
-        break;
-      case "newPeer":
-      case "peerClosed":
-      default:
-        console.warn("room.peer:notification", notification);
-        this.emit("@" + notification.method, notification.data);
-    }
+    console.warn("room.peer:notification", notification);
+    this.emit("@" + notification.method, notification.data);
   }
 }

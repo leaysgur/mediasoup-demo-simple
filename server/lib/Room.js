@@ -122,7 +122,9 @@ class ConfRoom {
 
         // Notify the new Peer to all other Peers.
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
-          otherPeer.notify("newPeer", { id: peer.id }).catch(console.error);
+          otherPeer
+            .notify("peerJoined", { peerId: peer.id })
+            .catch(console.error);
         }
 
         break;
