@@ -4,15 +4,15 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: [
-    'import', 'prettier'
+    'import',
   ],
   extends: [
     'eslint:recommended',
+    "plugin:prettier/recommended",
   ],
   rules: {
     'strict': ['error', 'global'],
 
-    'default-case': 'error',
     'no-self-compare': 'error',
     'no-else-return': 'error',
     'no-throw-literal': 'error',
@@ -28,14 +28,8 @@ module.exports = {
     'no-unused-expressions': 'off',
     'no-use-before-define': 'off',
     'prefer-const': 'error',
-    'semi': ['error', 'always'],
-    'quotes': ['error', 'single'],
 
-    'import/order': 'error',
-
-    'prettier': [
-      true, { 'singleQuote': true, 'trailingComma': 'all' },
-    ],
+    'import/order': 'error'
   },
   env: {
     browser: true,

@@ -8,74 +8,11 @@
  * them when appropriate.
  */
 
-const os = require('os');
-
 module.exports = {
-  // Signaling settings.
-  protoo: {
-    listenIp: '127.0.0.1',
-    listenPort: 4443, // NOTE: Don't change it (client app assumes 4443).
-    tls: {
-      cert: `${__dirname}/certs/mediasoup-demo.localhost.cert.pem`,
-      key: `${__dirname}/certs/mediasoup-demo.localhost.key.pem`
-    }
-  },
-  // Media settings.
   mediasoup: {
-    numWorkers: Object.keys(os.cpus()).length,
-    // mediasoup Worker settings.
-    worker: {
-      logLevel: 'debug',
-      logTags: [
-        'info',
-        'ice',
-        'dtls',
-        // 'rtp',
-        // 'srtp',
-        // 'rtcp'
-        // 'rtx',
-        // 'rbe',
-        // 'score'
-      ],
-      rtcMinPort: 40000,
-      rtcMaxPort: 49999
-    },
-    // mediasoup Router settings.
-    router: {
-      // Router media codecs.
-      mediaCodecs: [
-        {
-          kind: 'audio',
-          name: 'opus',
-          mimeType: 'audio/opus',
-          clockRate: 48000,
-          channels: 2
-        },
-        {
-          kind: 'video',
-          name: 'VP8',
-          mimeType: 'video/VP8',
-          clockRate: 90000,
-          parameters: {
-            'x-google-start-bitrate': 1500
-          }
-        },
-        {
-          kind: 'video',
-          name: 'h264',
-          mimeType: 'video/h264',
-          clockRate: 90000,
-          parameters: {
-            'packetization-mode': 1,
-            'profile-level-id': '42e01f',
-            'level-asymmetry-allowed': 1
-          }
-        }
-      ]
-    },
     // mediasoup WebRtcTransport settings.
     webRtcTransport: {
-      listenIps: [{ ip: '127.0.0.1', announcedIp: null }],
+      listenIps: [{ ip: "127.0.0.1", announcedIp: null }],
       maxIncomingBitrate: 1500000
     }
   }

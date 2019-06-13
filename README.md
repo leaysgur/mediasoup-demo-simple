@@ -5,6 +5,7 @@ Minimal simple demo app for mediasoup `v3`.
 ## Feat
 
 - use only 1 worker, 1 router = 1 room
+- VP8 only
 - send/recv multiple tracks
 
 ## Setup client

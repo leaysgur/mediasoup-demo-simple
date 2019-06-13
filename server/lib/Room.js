@@ -1,44 +1,11 @@
-const { EventEmitter } = require('events');
-const protoo = require('protoo-server');
-const config = require('../config');
-const Logger = require('./Logger');
-
-const logger = new Logger('Room');
+const { EventEmitter } = require("events");
+const protoo = require("protoo-server");
+const config = require("../config");
 
 class Room extends EventEmitter {
-  static async create({ mediasoupWorker, roomId, forceH264 }) {
-    logger.info('create() [roomId:%s, forceH264:%s]', roomId, forceH264);
-
-    // Create a protoo Room instance.
-    const protooRoom = new protoo.Room();
-
-    // Router media codecs.
-    let mediaCodecs = config.mediasoup.router.mediaCodecs;
-
-    // If forceH264 is given, remove all video codecs but H264.
-    if (forceH264) {
-      mediaCodecs = mediaCodecs.filter(
-        codec => codec.kind === 'audio' || codec.name.toLowerCase() === 'h264'
-      );
-    }
-
-    // Create a mediasoup Router.
-    const mediasoupRouter = await mediasoupWorker.createRouter({ mediaCodecs });
-
-    return new Room({
-      roomId,
-      protooRoom,
-      mediasoupRouter,
-    });
-  }
-
-  constructor({ roomId, protooRoom, mediasoupRouter }) {
+  constructor({ protooRoom, mediasoupRouter }) {
     super();
     this.setMaxListeners(Infinity);
-
-    // Room id.
-    // @type {String}
-    this._roomId = roomId;
 
     // Closed flag.
     // @type {Boolean}
@@ -54,7 +21,7 @@ class Room extends EventEmitter {
   }
 
   close() {
-    logger.debug('close()');
+    console.info("close()");
 
     this._closed = true;
 
@@ -65,13 +32,12 @@ class Room extends EventEmitter {
     this._mediasoupRouter.close();
 
     // Emit 'close' event.
-    this.emit('close');
+    this.emit("close");
   }
 
   logStatus() {
-    logger.info(
-      'logStatus() [roomId:%s, protoo Peers:%s, mediasoup Transports:%s]',
-      this._roomId,
+    console.info(
+      "logStatus() [protoo Peers:%s, mediasoup Transports:%s]",
       this._protooRoom.peers.length,
       this._mediasoupRouter._transports.size
     ); // NOTE: Private API.
@@ -81,8 +47,8 @@ class Room extends EventEmitter {
     const existingPeer = this._protooRoom.getPeer(peerId);
 
     if (existingPeer) {
-      logger.warn(
-        'handleProtooConnection() | there is already a protoo Peer with same peerId, closing it [peerId:%s]',
+      console.warn(
+        "handleProtooConnection() | there is already a protoo Peer with same peerId, closing it [peerId:%s]",
         peerId
       );
 
@@ -94,7 +60,7 @@ class Room extends EventEmitter {
     try {
       peer = this._protooRoom.createPeer(peerId, protooWebSocketTransport);
     } catch (error) {
-      logger.error('protooRoom.createPeer() failed:%o', error);
+      console.error("protooRoom.createPeer() failed:%o", error);
     }
 
     // Have mediasoup related maps ready even before the Peer joins since we
@@ -103,29 +69,29 @@ class Room extends EventEmitter {
     peer.data.producers = new Map();
     peer.data.consumers = new Map();
 
-    peer.on('request', (request, accept, reject) => {
-      logger.debug(
+    peer.on("request", (request, accept, reject) => {
+      console.info(
         'protoo Peer "request" event [method:%s, peerId:%s]',
         request.method,
         peer.id
       );
 
       this._handleProtooRequest(peer, request, accept, reject).catch(error => {
-        logger.error('request failed:%o', error);
+        console.error("request failed:%o", error);
 
         reject(error);
       });
     });
 
-    peer.on('close', () => {
+    peer.on("close", () => {
       if (this._closed) return;
 
-      logger.debug('protoo Peer "close" event [peerId:%s]', peer.id);
+      console.info('protoo Peer "close" event [peerId:%s]', peer.id);
 
       // If the Peer was joined, notify all Peers.
       if (peer.data.joined) {
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
-          otherPeer.notify('peerClosed', { peerId: peer.id }).catch(() => {});
+          otherPeer.notify("peerClosed", { peerId: peer.id }).catch(() => {});
         }
       }
 
@@ -137,10 +103,7 @@ class Room extends EventEmitter {
 
       // // If this is the latest Peer in the room, close the room.
       if (this._protooRoom.peers.length === 0) {
-        logger.info(
-          'last Peer in the room left, closing the room [roomId:%s]',
-          this._roomId
-        );
+        console.info("last Peer in the room left, closing the room");
 
         this.close();
       }
@@ -149,20 +112,20 @@ class Room extends EventEmitter {
 
   async _handleProtooRequest(peer, request, accept, reject) {
     switch (request.method) {
-      case 'getRouterRtpCapabilities': {
+      case "getRouterRtpCapabilities": {
         accept(this._mediasoupRouter.rtpCapabilities);
 
         break;
       }
 
-      case 'join': {
+      case "join": {
         // Ensure the Peer is not already joined.
-        if (peer.data.joined) throw new Error('Peer already joined');
+        if (peer.data.joined) throw new Error("Peer already joined");
 
         const { displayName, device, rtpCapabilities } = request.data;
 
-        if (typeof rtpCapabilities !== 'object')
-          throw new TypeError('missing rtpCapabilities');
+        if (typeof rtpCapabilities !== "object")
+          throw new TypeError("missing rtpCapabilities");
 
         // Store client data into the protoo Peer data object.
         peer.data.displayName = displayName;
@@ -197,7 +160,7 @@ class Room extends EventEmitter {
         // Notify the new Peer to all other Peers.
         for (const otherPeer of this._getJoinedPeers({ excludePeer: peer })) {
           otherPeer
-            .notify('newPeer', {
+            .notify("newPeer", {
               id: peer.id,
               displayName: peer.data.displayName,
               device: peer.data.device
@@ -208,7 +171,7 @@ class Room extends EventEmitter {
         break;
       }
 
-      case 'createWebRtcTransport': {
+      case "createWebRtcTransport": {
         // NOTE: Don't require that the Peer is joined here, so the client can
         // initiate mediasoup Transports and be ready when he later joins.
 
@@ -246,7 +209,7 @@ class Room extends EventEmitter {
         break;
       }
 
-      case 'connectWebRtcTransport': {
+      case "connectWebRtcTransport": {
         const { transportId, dtlsParameters } = request.data;
         const transport = peer.data.transports.get(transportId);
 
@@ -260,9 +223,9 @@ class Room extends EventEmitter {
         break;
       }
 
-      case 'produce': {
+      case "produce": {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined');
+        if (!peer.data.joined) throw new Error("Peer not yet joined");
 
         const { transportId, kind, rtpParameters } = request.data;
         let { appData } = request.data;
@@ -297,9 +260,9 @@ class Room extends EventEmitter {
         break;
       }
 
-      case 'closeProducer': {
+      case "closeProducer": {
         // Ensure the Peer is joined.
-        if (!peer.data.joined) throw new Error('Peer not yet joined');
+        if (!peer.data.joined) throw new Error("Peer not yet joined");
 
         const { producerId } = request.data;
         const producer = peer.data.producers.get(producerId);
@@ -318,7 +281,7 @@ class Room extends EventEmitter {
       }
 
       default: {
-        logger.error('unknown request.method "%s"', request.method);
+        console.error('unknown request.method "%s"', request.method);
 
         reject(500, `unknown request.method "${request.method}"`);
       }
@@ -356,8 +319,8 @@ class Room extends EventEmitter {
 
     // This should not happen.
     if (!transport) {
-      logger.warn(
-        '_createConsumer() | WebRtcTransport for consuming not found'
+      console.warn(
+        "_createConsumer() | WebRtcTransport for consuming not found"
       );
 
       return;
@@ -370,10 +333,10 @@ class Room extends EventEmitter {
       consumer = await transport.consume({
         producerId: producer.id,
         rtpCapabilities: consumerPeer.data.rtpCapabilities,
-        paused: producer.kind === 'video'
+        paused: producer.kind === "video"
       });
     } catch (error) {
-      logger.warn('_createConsumer() | transport.consume():%o', error);
+      console.warn("_createConsumer() | transport.consume():%o", error);
 
       return;
     }
@@ -382,23 +345,23 @@ class Room extends EventEmitter {
     consumerPeer.data.consumers.set(consumer.id, consumer);
 
     // Set Consumer events.
-    consumer.on('transportclose', () => {
+    consumer.on("transportclose", () => {
       // Remove from its map.
       consumerPeer.data.consumers.delete(consumer.id);
     });
 
-    consumer.on('producerclose', () => {
+    consumer.on("producerclose", () => {
       // Remove from its map.
       consumerPeer.data.consumers.delete(consumer.id);
 
       consumerPeer
-        .notify('consumerClosed', { consumerId: consumer.id })
+        .notify("consumerClosed", { consumerId: consumer.id })
         .catch(() => {});
     });
 
     // Send a protoo request to the remote Peer with Consumer parameters.
     try {
-      await consumerPeer.request('newConsumer', {
+      await consumerPeer.request("newConsumer", {
         peerId: producerPeer.id,
         producerId: producer.id,
         id: consumer.id,
@@ -411,11 +374,21 @@ class Room extends EventEmitter {
 
       // Now that we got the positive response from the remote Peer and, if
       // video, resume the Consumer to ask for an efficient key frame.
-      if (producer.kind === 'video') await consumer.resume();
+      if (producer.kind === "video") await consumer.resume();
     } catch (error) {
-      logger.warn('_createConsumer() | failed:%o', error);
+      console.warn("_createConsumer() | failed:%o", error);
     }
   }
 }
 
-module.exports = Room;
+exports.createRoom = async router => {
+  console.info("createRoom()");
+
+  // Create a protoo Room instance.
+  const protooRoom = new protoo.Room();
+
+  return new Room({
+    protooRoom,
+    mediasoupRouter: router
+  });
+};
