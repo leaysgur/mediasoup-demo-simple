@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "nodemon ./server.js ./lib"
+    "start": "nodemon ./main.js ./lib"
   },
   "dependencies": {
-    "awaitqueue": "^1.0.0",
     "debug": "^4.1.1",
     "mediasoup": "^3.1.1",
     "protoo-server": "^4.0.3"

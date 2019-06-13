@@ -1,46 +1,30 @@
 const { EventEmitter } = require("events");
-const protoo = require("protoo-server");
 const config = require("../config");
 
-class Room extends EventEmitter {
+class ConfRoom extends EventEmitter {
   constructor({ protooRoom, mediasoupRouter }) {
     super();
     this.setMaxListeners(Infinity);
 
-    // Closed flag.
-    // @type {Boolean}
     this._closed = false;
-
-    // protoo Room instance.
-    // @type {protoo.Room}
     this._protooRoom = protooRoom;
-
-    // mediasoup Router instance.
-    // @type {mediasoup.Router}
     this._mediasoupRouter = mediasoupRouter;
   }
 
   close() {
-    console.info("close()");
+    console.info("confRoom.close()");
 
     this._closed = true;
-
-    // Close the protoo Room.
     this._protooRoom.close();
-
-    // Close the mediasoup Router.
     this._mediasoupRouter.close();
-
-    // Emit 'close' event.
     this.emit("close");
   }
 
-  logStatus() {
-    console.info(
-      "logStatus() [protoo Peers:%s, mediasoup Transports:%s]",
-      this._protooRoom.peers.length,
-      this._mediasoupRouter._transports.size
-    ); // NOTE: Private API.
+  getStatus() {
+    return {
+      peerLen: this._protooRoom.peers.length,
+      transportLen: this._mediasoupRouter._transports.size
+    };
   }
 
   handleProtooConnection({ peerId, protooWebSocketTransport }) {
@@ -101,10 +85,8 @@ class Room extends EventEmitter {
         transport.close();
       }
 
-      // // If this is the latest Peer in the room, close the room.
       if (this._protooRoom.peers.length === 0) {
         console.info("last Peer in the room left, closing the room");
-
         this.close();
       }
     });
@@ -381,14 +363,4 @@ class Room extends EventEmitter {
   }
 }
 
-exports.createRoom = async router => {
-  console.info("createRoom()");
-
-  // Create a protoo Room instance.
-  const protooRoom = new protoo.Room();
-
-  return new Room({
-    protooRoom,
-    mediasoupRouter: router
-  });
-};
+module.exports = ConfRoom;
