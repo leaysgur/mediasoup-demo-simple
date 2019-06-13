@@ -15,7 +15,6 @@ class ConfRoom {
 
   handlePeerConnect({ peerId, protooWebSocketTransport }) {
     const existingPeer = this._protooRoom.getPeer(peerId);
-
     if (existingPeer) {
       console.log(
         "handleProtooConnection() | there is already a protoo Peer with same peerId, closing it [peerId:%s]",
@@ -26,11 +25,11 @@ class ConfRoom {
     }
 
     let peer;
-
     try {
       peer = this._protooRoom.createPeer(peerId, protooWebSocketTransport);
     } catch (error) {
       console.error("protooRoom.createPeer() failed:%o", error);
+      return;
     }
 
     // Have mediasoup related maps ready even before the Peer joins since we
@@ -40,12 +39,6 @@ class ConfRoom {
     peer.data.consumers = new Map();
 
     peer.on("request", (request, accept, reject) => {
-      console.log(
-        'protoo Peer "request" event [method:%s, peerId:%s]',
-        request.method,
-        peer.id
-      );
-
       this._handleProtooRequest(peer, request, accept, reject).catch(error => {
         console.error("request failed:%o", error);
         reject(error);
@@ -64,8 +57,6 @@ class ConfRoom {
         }
       }
 
-      // Iterate and close all mediasoup Transport associated to this Peer, so all
-      // its Producers and Consumers will also be closed.
       for (const transport of peer.data.transports.values()) {
         transport.close();
       }
@@ -243,7 +234,6 @@ class ConfRoom {
     const transport = Array.from(consumerPeer.data.transports.values()).find(
       t => t.appData.consuming
     );
-
     if (!transport) {
       console.error(
         "_createConsumer() | WebRtcTransport for consuming not found"
