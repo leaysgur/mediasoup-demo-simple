@@ -1,14 +1,12 @@
 import { EventEmitter } from "events";
 import { Device } from "mediasoup-client";
 import { WebSocketTransport, Peer } from "protoo-client";
-import { generateRandomId } from "./utils";
 
 export default class Room extends EventEmitter {
   constructor() {
     console.warn("room.constructor()");
     super();
 
-    this.id = "p:" + generateRandomId(6);
     this.peer = null;
     this.sendTransport = null;
     this.recvTransport = null;
@@ -16,9 +14,7 @@ export default class Room extends EventEmitter {
 
   join() {
     console.warn("room.join()");
-    const wsTransport = new WebSocketTransport(
-      `ws://localhost:2345/?peerId=${this.id}`
-    );
+    const wsTransport = new WebSocketTransport(`ws://localhost:2345`);
 
     this.peer = new Peer(wsTransport);
     this.peer.on("open", this.onPeerOpen.bind(this));

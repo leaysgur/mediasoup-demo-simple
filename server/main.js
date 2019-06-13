@@ -1,5 +1,4 @@
 const http = require("http");
-const url = require("url");
 const { WebSocketServer } = require("protoo-server");
 const mediasoup = require("mediasoup");
 const ConfRoom = require("./lib/Room");
@@ -41,25 +40,18 @@ const ConfRoom = require("./lib/Room");
   });
 
   const wsServer = new WebSocketServer(httpServer);
-  wsServer.on("connectionrequest", (info, accept, reject) => {
-    const u = url.parse(info.request.url, true);
-    // TODO: generate this from server?
-    const peerId = u.query["peerId"];
-
-    if (!peerId) {
-      reject(400, "Connection request without peerId");
-      return;
-    }
-
+  wsServer.on("connectionrequest", (info, accept) => {
     console.log(
       "protoo connection request [peerId:%s, address:%s, origin:%s]",
-      peerId,
       info.socket.remoteAddress,
       info.origin
     );
 
-    const protooWebSocketTransport = accept();
-    room.handlePeerConnect({ peerId, protooWebSocketTransport });
+    room.handlePeerConnect({
+      // to be more and more strict
+      peerId: `p${String(Math.random()).slice(2)}`,
+      protooWebSocketTransport: accept()
+    });
   });
 
   console.log("websocket server started on http://127.0.0.1:2345");
