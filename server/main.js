@@ -2,11 +2,10 @@ const http = require("http");
 const url = require("url");
 const { WebSocketServer, Room } = require("protoo-server");
 const mediasoup = require("mediasoup");
-const debug = require("debug")("demo");
 const ConfRoom = require("./lib/Room");
 
 (async () => {
-  debug("start server");
+  console.log("start server");
 
   const worker = await mediasoup.createWorker({
     rtcMinPort: 3000,
@@ -14,7 +13,7 @@ const ConfRoom = require("./lib/Room");
   });
 
   worker.on("died", () => {
-    debug("mediasoup Worker died, exit..");
+    console.log("mediasoup Worker died, exit..");
     process.exit(1);
   });
 
@@ -40,7 +39,7 @@ const ConfRoom = require("./lib/Room");
     protooRoom: new Room(),
     mediasoupRouter: router
   });
-  setInterval(() => debug("room stat", room.getStatus()), 1000 * 10);
+  setInterval(() => console.log("room stat", room.getStatus()), 1000 * 10);
 
   const httpServer = http.createServer();
   await new Promise(resolve => {
@@ -57,7 +56,7 @@ const ConfRoom = require("./lib/Room");
       return;
     }
 
-    debug(
+    console.log(
       "protoo connection request [peerId:%s, address:%s, origin:%s]",
       peerId,
       info.socket.remoteAddress,
@@ -68,5 +67,5 @@ const ConfRoom = require("./lib/Room");
     room.handleProtooConnection({ peerId, protooWebSocketTransport });
   });
 
-  debug("websocket server started on http://127.0.0.1:2345");
+  console.log("websocket server started on http://127.0.0.1:2345");
 })();

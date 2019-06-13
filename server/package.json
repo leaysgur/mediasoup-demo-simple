@@ -6,7 +6,6 @@
     "start": "nodemon ./main.js ./lib"
   },
   "dependencies": {
-    "debug": "^4.1.1",
     "mediasoup": "^3.1.1",
     "protoo-server": "^4.0.3"
   },

@@ -11,7 +11,7 @@ class ConfRoom extends EventEmitter {
   }
 
   close() {
-    console.info("confRoom.close()");
+    console.log("close()");
 
     this._closed = true;
     this._protooRoom.close();
@@ -30,7 +30,7 @@ class ConfRoom extends EventEmitter {
     const existingPeer = this._protooRoom.getPeer(peerId);
 
     if (existingPeer) {
-      console.warn(
+      console.log(
         "handleProtooConnection() | there is already a protoo Peer with same peerId, closing it [peerId:%s]",
         peerId
       );
@@ -53,7 +53,7 @@ class ConfRoom extends EventEmitter {
     peer.data.consumers = new Map();
 
     peer.on("request", (request, accept, reject) => {
-      console.info(
+      console.log(
         'protoo Peer "request" event [method:%s, peerId:%s]',
         request.method,
         peer.id
@@ -61,15 +61,13 @@ class ConfRoom extends EventEmitter {
 
       this._handleProtooRequest(peer, request, accept, reject).catch(error => {
         console.error("request failed:%o", error);
-
         reject(error);
       });
     });
 
     peer.on("close", () => {
       if (this._closed) return;
-
-      console.info('protoo Peer "close" event [peerId:%s]', peer.id);
+      console.log('protoo Peer "close" event [peerId:%s]', peer.id);
 
       // If the Peer was joined, notify all Peers.
       if (peer.data.joined) {
@@ -85,7 +83,7 @@ class ConfRoom extends EventEmitter {
       }
 
       if (this._protooRoom.peers.length === 0) {
-        console.info("last Peer in the room left, closing the room");
+        console.log("last Peer in the room left, closing the room");
         this.close();
       }
     });
@@ -95,32 +93,27 @@ class ConfRoom extends EventEmitter {
     switch (request.method) {
       case "getRouterRtpCapabilities": {
         accept(this._mediasoupRouter.rtpCapabilities);
-
         break;
       }
 
       case "join": {
-        // Ensure the Peer is not already joined.
         if (peer.data.joined) throw new Error("Peer already joined");
 
-        const { displayName, device, rtpCapabilities } = request.data;
+        const { device, rtpCapabilities } = request.data;
 
         if (typeof rtpCapabilities !== "object")
           throw new TypeError("missing rtpCapabilities");
 
         // Store client data into the protoo Peer data object.
-        peer.data.displayName = displayName;
         peer.data.device = device;
         peer.data.rtpCapabilities = rtpCapabilities;
 
         // Tell the new Peer about already joined Peers.
         // And also create Consumers for existing Producers.
         const peers = [];
-
         for (const otherPeer of this._getJoinedPeers()) {
           peers.push({
             id: otherPeer.id,
-            displayName: otherPeer.data.displayName,
             device: otherPeer.data.device
           });
 
@@ -143,7 +136,6 @@ class ConfRoom extends EventEmitter {
           otherPeer
             .notify("newPeer", {
               id: peer.id,
-              displayName: peer.data.displayName,
               device: peer.data.device
             })
             .catch(() => {});
@@ -153,16 +145,10 @@ class ConfRoom extends EventEmitter {
       }
 
       case "createWebRtcTransport": {
-        // NOTE: Don't require that the Peer is joined here, so the client can
-        // initiate mediasoup Transports and be ready when he later joins.
-
-        const { forceTcp, producing, consuming } = request.data;
+        const { producing, consuming } = request.data;
 
         const transport = await this._mediasoupRouter.createWebRtcTransport({
           listenIps: [{ ip: "127.0.0.1" }],
-          enableUdp: !forceTcp,
-          enableTcp: true,
-          preferUdp: true,
           appData: { producing, consuming }
         });
 
@@ -187,14 +173,12 @@ class ConfRoom extends EventEmitter {
           throw new Error(`transport with id "${transportId}" not found`);
 
         await transport.connect({ dtlsParameters });
-
         accept();
 
         break;
       }
 
       case "produce": {
-        // Ensure the Peer is joined.
         if (!peer.data.joined) throw new Error("Peer not yet joined");
 
         const { transportId, kind, rtpParameters } = request.data;
@@ -242,17 +226,14 @@ class ConfRoom extends EventEmitter {
 
         producer.close();
 
-        // Remove from its map.
         peer.data.producers.delete(producer.id);
-
         accept();
 
         break;
       }
 
       default: {
-        console.error('unknown request.method "%s"', request.method);
-
+        console.log('unknown request.method "%s"', request.method);
         reject(500, `unknown request.method "${request.method}"`);
       }
     }
@@ -279,39 +260,33 @@ class ConfRoom extends EventEmitter {
         rtpCapabilities: consumerPeer.data.rtpCapabilities
       })
     ) {
+      console.log("_createConsumer() | can not consume!");
       return;
     }
 
-    // Must take the WebRtcTransport the remote Peer is using for consuming.
     const transport = Array.from(consumerPeer.data.transports.values()).find(
       t => t.appData.consuming
     );
 
-    // This should not happen.
     if (!transport) {
-      console.warn(
-        "_createConsumer() | WebRtcTransport for consuming not found"
-      );
+      console.log("_createConsumer() | WebRtcTransport for consuming not found");
 
       return;
     }
 
-    // Create the Consumer in paused mode.
     let consumer;
-
     try {
       consumer = await transport.consume({
         producerId: producer.id,
         rtpCapabilities: consumerPeer.data.rtpCapabilities,
+        // consume with paused to avoid from missing keyframe
         paused: producer.kind === "video"
       });
     } catch (error) {
-      console.warn("_createConsumer() | transport.consume():%o", error);
-
+      console.log("_createConsumer() | transport.consume():%o", error);
       return;
     }
 
-    // Store the Consumer into the protoo consumerPeer data Object.
     consumerPeer.data.consumers.set(consumer.id, consumer);
 
     // Set Consumer events.
@@ -323,7 +298,6 @@ class ConfRoom extends EventEmitter {
     consumer.on("producerclose", () => {
       // Remove from its map.
       consumerPeer.data.consumers.delete(consumer.id);
-
       consumerPeer
         .notify("consumerClosed", { consumerId: consumer.id })
         .catch(() => {});
@@ -342,11 +316,10 @@ class ConfRoom extends EventEmitter {
         producerPaused: consumer.producerPaused
       });
 
-      // Now that we got the positive response from the remote Peer and, if
-      // video, resume the Consumer to ask for an efficient key frame.
+      // Resume it when accepted
       if (producer.kind === "video") await consumer.resume();
     } catch (error) {
-      console.warn("_createConsumer() | failed:%o", error);
+      console.log("_createConsumer() | failed:%o", error);
     }
   }
 }
