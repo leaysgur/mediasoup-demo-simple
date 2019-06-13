@@ -1,5 +1,4 @@
 const { EventEmitter } = require("events");
-const config = require("../config");
 
 class ConfRoom extends EventEmitter {
   constructor({ protooRoom, mediasoupRouter }) {
@@ -160,7 +159,7 @@ class ConfRoom extends EventEmitter {
         const { forceTcp, producing, consuming } = request.data;
 
         const transport = await this._mediasoupRouter.createWebRtcTransport({
-          listenIps: config.mediasoup.webRtcTransport.listenIps,
+          listenIps: [{ ip: "127.0.0.1" }],
           enableUdp: !forceTcp,
           enableTcp: true,
           preferUdp: true,
@@ -176,17 +175,6 @@ class ConfRoom extends EventEmitter {
           iceCandidates: transport.iceCandidates,
           dtlsParameters: transport.dtlsParameters
         });
-
-        // If set, apply max incoming bitrate limit.
-        const { maxIncomingBitrate } = config.mediasoup.webRtcTransport;
-
-        if (maxIncomingBitrate) {
-          try {
-            await transport.setMaxIncomingBitrate(maxIncomingBitrate);
-          } catch (error) {
-            // do nothing
-          }
-        }
 
         break;
       }
