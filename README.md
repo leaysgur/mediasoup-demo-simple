@@ -28,5 +28,5 @@ npm i
 npm start
 ```
 
-Run websocket server on `http:localost:2345`.
+Run websocket server on `http:localhost:2345`.
 Also media server runs on `http:localhost:{3000-4000}`.
